@@ -1,0 +1,22 @@
+{
+  "name": "motadata-sdk-pipeline",
+  "version": "0.7.0",
+  "description": "NFR-driven SDK-addition pipeline. Six-phase orchestration (Intake → Design → Implementation → Testing → Documentation → Feedback) with HITL gates, devil-fleet design review, learning-engine self-improvement, and per-language packs (Go, Python, extensible). Ships ~80 agents, ~50 skills, 2 slash commands, 1 PostToolUse hook.",
+  "author": {
+    "name": "Motadata Engineering"
+  },
+  "homepage": "https://github.com/PremModhaOfficial/go-sdk-pipeline",
+  "repository": "https://github.com/PremModhaOfficial/go-sdk-pipeline",
+  "license": "Apache-2.0",
+  "keywords": [
+    "sdk",
+    "pipeline",
+    "nfr-driven",
+    "tdd",
+    "code-generation",
+    "review-fix-loop",
+    "self-evolving",
+    "go",
+    "python"
+  ]
+}

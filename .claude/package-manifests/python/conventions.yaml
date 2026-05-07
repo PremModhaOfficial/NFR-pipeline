@@ -1,0 +1,311 @@
+# Python pack — language-specific overlays for shared-core debt-bearer agents.
+#
+# How this file is consumed:
+#   The 4 debt-bearer agents in shared-core (sdk-design-devil, sdk-overengineering-critic,
+#   sdk-semver-devil, sdk-security-devil) carry universal rule bodies. At runtime, when
+#   active-packages.json:target_language == "python", they load this file and apply the
+#   Python examples + idiom names alongside the universal rules.
+#
+# Per CLAUDE.md rule 34 (D6=Split decision from R2 spike, 2026-04-27): rule body lives
+# in shared-core; per-language flavor lives in <pack>/conventions.yaml. This file is the
+# Python sibling of .claude/package-manifests/go/conventions.yaml.
+#
+# Schema: top-level `agents` map keyed by agent name. Each agent has a `rules` map
+# keyed by rule-name. Each rule entry carries any of:
+#   - idiom: <string>           # the Python-language term for the concept
+#   - primitive: <string>       # the Python-language primitive
+#   - rule: <string>            # the language-coupled rule statement
+#   - rationale: <string>       # why the rule exists
+#   - example_violation: <code> # what NOT to do
+#   - example_fix: <code>       # what TO do
+#   - examples_violations: <[strings]>  # multiple short violation examples
+#
+# Convention reference: PEP 8 (style), PEP 257 (docstrings), PEP 484 (type hints),
+# PEP 526 (variable annotations), PEP 563 (postponed annotations), PEP 695 (type
+# parameter syntax in 3.12+).
+
+schema_version: "1.0"
+language: python
+pipeline_version_compat: ">=0.5.0"
+
+agents:
+
+  sdk-design-devil:
+    rules:
+      parameter_count:
+        idiom: "@dataclass Config / pydantic Settings / TypedDict"
+        rationale: |
+          Group >4 parameters into a dedicated config dataclass; constructor takes the
+          dataclass instance. For SDKs targeting strict typing, prefer `@dataclass(frozen=True)`
+          or `pydantic.BaseModel` with `model_config = ConfigDict(frozen=True)` so the
+          config is immutable post-construction (matches the Go pack's "no post-construction
+          mutation" rule).
+        example_violation: |
+          def __init__(self, host: str, port: int, password: str,
+                       db: int, pool_size: int, timeout: float) -> None: ...
+        example_fix: |
+          from dataclasses import dataclass
+          @dataclass(frozen=True)
+          class Config:
+              host: str
+              port: int = 6379
+              password: str = ""
+              db: int = 0
+              pool_size: int = 10
+              timeout: float = 5.0
+          class Client:
+              def __init__(self, config: Config) -> None: ...
+
+      mutable_shared_state:
+        idiom: "frozen dataclass / namedtuple; copy into immutable instance fields"
+        example_violation: |
+          c = Client()
+          c.pool_size = 5    # post-construction mutation
+        example_fix: |
+          c = Client(Config(pool_size=5))    # immutable after construction
+
+      mutable_default_argument:
+        rule: "Never use a mutable object as a default argument value (`def f(x: list = [])`)."
+        rationale: |
+          Default values are evaluated once at function definition time. A shared
+          mutable default leaks state across calls. This is the most common Python
+          beginner footgun, and it's still a valid rule for SDK code.
+        example_violation: |
+          def add_user(name: str, history: list[str] = []) -> None:
+              history.append(name)        # next call sees previous calls' names
+        example_fix: |
+          def add_user(name: str, history: list[str] | None = None) -> None:
+              if history is None:
+                  history = []
+              history.append(name)
+
+      naming_idiomatic:
+        rules:
+          - "PEP 8: snake_case for functions/methods/variables; PascalCase for classes; ALL_CAPS for module-level constants."
+          - "no stuttering: a class should not begin with its module name (`redis.RedisClient` → `redis.Client`)."
+          - "leading underscore = private (`_internal`); double underscore = name-mangled (`__dunder` in classes); avoid double-underscore unless intentional."
+          - "no Hungarian notation; let type hints carry the type information."
+        examples_violations:
+          - "redis.RedisClient — stuttering; should be redis.Client"
+          - "ConfigManager — '-er' suffix on a non-actor data holder; prefer Config"
+          - "userId — should be user_id (snake_case)"
+
+      async_ownership:
+        primitive: "asyncio.Task / asyncio.TaskGroup"
+        idiom: "every spawned task documents: owner, cancellation trigger, awaited shutdown"
+        rationale: |
+          Python async tasks share Go goroutines' "spawn it and walk away" footgun.
+          Use TaskGroup (3.11+) so cancellation propagates cleanly; avoid bare
+          `asyncio.create_task()` with no reference held — the GC may collect the
+          task while it's still running.
+        example_violation: |
+          async def start(self) -> None:
+              asyncio.create_task(self._poll())   # who cancels this? when?
+        example_fix: |
+          async def run(self, ctx: AbortSignal) -> None:
+              """Run the poll loop; cancel via the AbortSignal to stop."""
+              async with asyncio.TaskGroup() as tg:
+                  tg.create_task(self._poll(ctx))
+
+      cancellation_primitive:
+        primitive: "asyncio.CancelledError + cooperative cancellation"
+        rule: |
+          Every async I/O coroutine must propagate `asyncio.CancelledError` (don't
+          swallow it in a bare `except`). Methods that call out to I/O should be
+          `async def` so callers can apply `asyncio.timeout()` / `asyncio.wait_for()`.
+        example_violation: |
+          async def set(self, key: str, val: str) -> None:
+              try:
+                  await self._send(...)
+              except Exception:           # swallows CancelledError too
+                  pass
+        example_fix: |
+          async def set(self, key: str, val: str) -> None:
+              try:
+                  await self._send(...)
+              except asyncio.CancelledError:
+                  raise                    # always re-raise cancellation
+              except RedisError as err:
+                  raise CacheError(...) from err
+
+      forbidden_module_side_effects:
+        rule: "No top-level I/O, no top-level mutable state."
+        rationale: |
+          Module body runs at import time, is hard to test, hard to mock, and creates
+          hidden coupling. The Python equivalent of Go's "no init() functions" rule.
+        example_violation: |
+          # at module scope:
+          _CACHE = {}
+          _CONN = redis.Redis(host="prod.example.com")  # I/O at import!
+
+      protocol_vs_abc:
+        rule: |
+          Prefer `typing.Protocol` (structural typing) over `abc.ABC` (nominal) for
+          interface declarations on the SDK boundary. Use ABC only when you genuinely
+          need shared method bodies; otherwise Protocol enables duck-typing without
+          inheritance ceremony.
+        rationale: |
+          Protocols mirror Go's "accept interfaces, return structs" maxim. Callers
+          can pass any object satisfying the protocol; they don't need to inherit
+          from your ABC.
+        example_fix: |
+          from typing import Protocol
+          class CacheProtocol(Protocol):
+              async def get(self, key: str) -> str | None: ...
+              async def set(self, key: str, value: str) -> None: ...
+          # Any class with these two methods satisfies CacheProtocol.
+
+  sdk-overengineering-critic:
+    rules:
+      unused_fields:
+        rule: "Generated dataclass / Settings has fields no code references — remove."
+        example_violation: "Config.retry_jitter declared, never read in any code path"
+
+      unnecessary_wrapper:
+        rule: "Trivial wrapper class around a primitive — remove and use the primitive directly."
+        example_violation: |
+          class StringWrapper:
+              def __init__(self, s: str) -> None:
+                  self._s = s
+              def get(self) -> str:
+                  return self._s
+        example_fix: "Use str directly. NewType('UserId', str) is the lightweight alternative if you need nominal type safety without runtime cost."
+
+      ceremonial_class:
+        rule: "Class with >10 instance attributes (not a config) — split into smaller domain types."
+
+      gratuitous_inheritance:
+        rule: |
+          Inheritance for code reuse alone is a smell — prefer composition. Multiple
+          inheritance for non-mixin classes (i.e., classes carrying state) creates
+          MRO confusion. Use `@dataclass(frozen=True, slots=True)` and inject
+          collaborators rather than inheriting from them.
+        example_violation: |
+          class CachedTimedRetriedClient(CacheMixin, TimingMixin, RetryMixin, BaseClient):
+              ...
+        example_fix: |
+          # Compose explicitly via decorators or wrapper functions
+          client = retry(timed(cached(BaseClient(...))))
+
+      error_chain_ladder:
+        rule: |
+          Stack of `raise X from Y from Z` is a smell — flatten to one wrap per logical
+          layer. Use `raise NewError(...) from original_error`; `errors.__cause__` and
+          `errors.__context__` already preserve the full chain for traceback rendering.
+        example_violation: |
+          try: ...
+          except E1 as e1:
+              try: raise E2(...) from e1
+              except E2 as e2: raise E3(...) from e2
+        example_fix: |
+          try:
+              ...
+          except RedisError as err:
+              raise CacheError(f"set {key!r}") from err
+
+      ceremonial_property:
+        rule: "Property that just returns a field unchanged — use the field directly. Properties are for computed values or invariant enforcement."
+        example_violation: |
+          class Config:
+              def __init__(self, host: str) -> None:
+                  self._host = host
+              @property
+              def host(self) -> str:
+                  return self._host
+
+  sdk-semver-devil:
+    rules:
+      semver_basics:
+        rule: "Standard semver: patch = bug fix, minor = additive, major = break."
+        notes: "Python uses PEP 440 version specifiers in pyproject.toml; semver maps cleanly."
+
+      api_surface_definition:
+        rule: |
+          The public API surface for a Python SDK is: every name not starting with `_`,
+          plus every name in `__all__` if defined. Adding to `__all__` is minor; removing
+          or renaming is major. Changing a method signature (param removed, type
+          changed, default removed, return type changed) is major.
+        example_minor_addition: "redis.Config — new exported dataclass, stable-since v1.1.0 ✓"
+        example_major_break: "redis.Client.get(self, key) → redis.Client.get(self, key, *, timeout) — adding required keyword param breaks existing callers"
+        example_patch: "internal eviction policy faster — same exports, same semantics — patch bump"
+
+      type_hint_changes:
+        rule: |
+          Tightening a parameter type (e.g., `str | None` → `str`) is a major break.
+          Loosening (e.g., `int` → `int | float`) is minor for input parameters but
+          major for return types (callers may depend on the narrower contract).
+        example_violation: "def get(self, key: str | None) -> str: → def get(self, key: str) -> str: — tighter input is breaking"
+
+  sdk-security-devil:
+    rules:
+      credential_log_safety:
+        primitive: "__repr__ / __str__ override; SecretStr from pydantic"
+        rule: "Credential-bearing fields must NOT auto-log their value."
+        rationale: |
+          `print(config)` and `logger.info(config)` both invoke __repr__ / __str__
+          by default. A bare `password: str` field will leak under both. Wrap in a
+          redacting type whose __repr__ returns a placeholder.
+        example_violation: |
+          @dataclass
+          class Config:
+              password: str         # logger.info(config) leaks
+        example_fix: |
+          from typing import NewType
+          class _Secret(str):
+              __slots__ = ()
+              def __repr__(self) -> str: return "<redacted>"
+              def __str__(self) -> str: return "<redacted>"
+          @dataclass
+          class Config:
+              password: _Secret
+
+      tls_minimum:
+        rule: "TLS 1.2 floor; prefer 1.3."
+        rationale: |
+          `ssl.create_default_context()` already enforces 1.2+; if the SDK exposes a
+          custom SSLContext, set `ctx.minimum_version = ssl.TLSVersion.TLSv1_3`
+          unless the consumer explicitly opts down.
+
+      timing_attack_safety:
+        primitive: "hmac.compare_digest"
+        rule: "Compare credentials, signatures, tokens with `hmac.compare_digest(a, b)`, NEVER `==`."
+        rationale: |
+          `==` on str/bytes short-circuits on the first differing byte, leaking
+          string-prefix information through timing. `hmac.compare_digest` runs in
+          time proportional to the longer of the two inputs.
+        example_violation: |
+          if user_token == expected:    # timing leak
+              return ok()
+        example_fix: |
+          import hmac
+          if hmac.compare_digest(user_token, expected):
+              return ok()
+
+      pickle_unsafe:
+        rule: |
+          NEVER call `pickle.loads()` on data from an untrusted source. `pickle` is a
+          Turing-complete code-execution format — receiving an attacker-controlled
+          payload and unpickling it = remote code execution. Use JSON, msgpack with
+          a strict schema, or protobuf instead for any cross-process transport.
+        example_violation: |
+          import pickle
+          data = pickle.loads(network_bytes)   # RCE if network_bytes is hostile
+
+      ssrf_default:
+        rule: "Reject private IP ranges (RFC 1918, link-local, loopback) by default; require explicit opt-in via Config flag."
+        rationale: |
+          When the SDK takes a URL as input (webhook delivery, image fetching, etc.)
+          a malicious caller can supply `http://169.254.169.254/...` to read AWS
+          IMDSv1 metadata. Use `ipaddress.ip_address(host).is_private` to validate.
+
+      yaml_unsafe_load:
+        rule: "Use `yaml.safe_load()`, NEVER `yaml.load()` (without explicit Loader)."
+        rationale: |
+          `yaml.load()` invokes constructor tags that can call arbitrary Python
+          (`!!python/object/apply` etc.). `safe_load` only accepts pure data nodes.
+        example_violation: |
+          import yaml
+          cfg = yaml.load(open("config.yaml"))    # warning: code execution risk
+        example_fix: |
+          import yaml
+          cfg = yaml.safe_load(open("config.yaml"))

@@ -1,0 +1,155 @@
+{
+  "schema_version": "1.0.0",
+  "name": "go",
+  "version": "1.0.0",
+  "type": "language-adapter",
+  "description": "Go SDK pipeline adapter for motadatagosdk. Target: Go 1.26 module motadatagosdk.",
+  "depends": ["shared-core@>=1.0.0"],
+  "pipeline_version_compat": ">=0.6.0",
+
+  "agents": [
+    "code-reviewer-go",
+    "documentation-agent-go",
+    "refactoring-agent-go",
+    "sdk-api-ergonomics-devil-go",
+    "sdk-benchmark-devil-go",
+    "sdk-breaking-change-devil-go",
+    "sdk-complexity-devil-go",
+    "sdk-constraint-devil-go",
+    "sdk-convention-devil-go",
+    "sdk-dep-vet-devil-go",
+    "sdk-existing-api-analyzer-go",
+    "sdk-integration-flake-hunter-go",
+    "sdk-leak-hunter-go",
+    "sdk-perf-architect-go",
+    "sdk-profile-auditor-go",
+    "sdk-soak-runner-go"
+  ],
+
+  "skills": [
+    "go-api-ergonomics-patterns",
+    "go-backpressure-flow-control",
+    "go-circuit-breaker-policy",
+    "go-client-mock-strategy",
+    "go-client-rate-limiting",
+    "go-client-shutdown-lifecycle",
+    "go-client-tls-configuration",
+    "go-concurrency-patterns",
+    "go-connection-pool-tuning",
+    "go-context-deadline-patterns",
+    "go-credential-provider-pattern",
+    "go-dependency-vetting",
+    "go-error-handling-patterns",
+    "go-example-function-patterns",
+    "go-fuzz-patterns",
+    "go-hexagonal-architecture",
+    "go-idempotent-retry-patterns",
+    "go-mock-patterns",
+    "go-module-paths",
+    "go-otel-instrumentation",
+    "go-sdk-config-struct-pattern",
+    "go-sdk-otel-hook-integration",
+    "go-struct-interface-design",
+    "go-table-driven-tests",
+    "go-tdd-patterns",
+    "go-testcontainers-setup",
+    "go-testing-patterns",
+    "goroutine-leak-prevention"
+  ],
+
+  "guardrails": [
+    "G30", "G31", "G32", "G33", "G34", "G38",
+    "G40", "G41", "G42", "G43", "G48",
+    "G60", "G61", "G63", "G65",
+    "G95", "G96", "G97", "G98", "G99",
+    "G100", "G101", "G102", "G103",
+    "G104", "G107", "G109"
+  ],
+
+  "aspirational_guardrails": {
+    "G110": "Perf-exception marker pairing (rule 32 axis 7, rule 29). Owner: sdk-marker-hygiene-devil. Phases: Impl M7 + M9. Script not yet authored — defer until first [perf-exception:] marker ships in source. Shareable as single shared-core script when authored."
+  },
+
+  "waves": {
+    "I3_existing_api":        ["sdk-existing-api-analyzer-go"],
+    "D1_design":              ["sdk-perf-architect-go"],
+    "D3_devils":              ["sdk-dep-vet-devil-go", "sdk-convention-devil-go"],
+    "D3_devils_mode_bc":      ["sdk-breaking-change-devil-go", "sdk-constraint-devil-go"],
+    "M3_5_profile_audit":     ["sdk-profile-auditor-go"],
+    "M4_constraint_proof":    ["sdk-constraint-devil-go"],
+    "M5_refactor":            ["refactoring-agent-go"],
+    "M6_docs":                ["documentation-agent-go"],
+    "M7_devils":              ["sdk-api-ergonomics-devil-go", "sdk-leak-hunter-go", "code-reviewer-go"],
+    "T3_flake_hunt":          ["sdk-integration-flake-hunter-go"],
+    "T5_bench_complexity":    ["sdk-benchmark-devil-go", "sdk-complexity-devil-go"],
+    "T5_5_soak":              ["sdk-soak-runner-go"],
+    "T6_leak":                ["sdk-leak-hunter-go"]
+  },
+
+  "tier_critical": {
+    "design": {
+      "T1": ["sdk-perf-architect-go", "sdk-dep-vet-devil-go", "sdk-convention-devil-go"],
+      "T2": ["sdk-dep-vet-devil-go"]
+    },
+    "implementation": {
+      "T1": ["sdk-profile-auditor-go", "sdk-leak-hunter-go", "code-reviewer-go", "documentation-agent-go"],
+      "T2": ["code-reviewer-go", "documentation-agent-go"]
+    },
+    "testing": {
+      "T1": ["sdk-leak-hunter-go", "sdk-benchmark-devil-go", "sdk-complexity-devil-go", "sdk-soak-runner-go", "sdk-integration-flake-hunter-go"],
+      "T2": ["sdk-integration-flake-hunter-go"]
+    }
+  },
+
+  "toolchain": {
+    "build": "go build ./...",
+    "test": "go test ./... -race -count=1",
+    "lint": "golangci-lint run",
+    "vet": "go vet ./...",
+    "fmt": "gofmt -l .",
+    "coverage": "go test ./... -coverprofile=coverage.out",
+    "coverage_min_pct": 90,
+    "bench": "go test -bench=. -benchmem -count=10",
+    "supply_chain": ["govulncheck ./...", "osv-scanner --recursive ."],
+    "leak_check": "goleak.VerifyTestMain"
+  },
+
+  "file_extensions": [".go"],
+
+  "marker_comment_syntax": {
+    "line": "//",
+    "block_open": "/*",
+    "block_close": "*/"
+  },
+
+  "module_file": "go.mod",
+
+  "baselines": {
+    "scope_owned": "per-language",
+    "owns_per_language": [
+      "performance-baselines.json",
+      "coverage-baselines.json",
+      "output-shape-history.jsonl",
+      "devil-verdict-history.jsonl",
+      "do-not-regenerate-hashes.json",
+      "stable-signatures.json"
+    ],
+    "owns_per_language_paths": [
+      "baselines/go/performance-baselines.json",
+      "baselines/go/coverage-baselines.json",
+      "baselines/go/output-shape-history.jsonl",
+      "baselines/go/devil-verdict-history.jsonl",
+      "baselines/go/do-not-regenerate-hashes.json",
+      "baselines/go/stable-signatures.json",
+      "baselines/go/regression-report-<run-id>.md"
+    ],
+    "contributes_per_language_partition_to": []
+  },
+
+  "notes": {
+    "v0_6_migration_status": "fully populated. Includes 3 new skills extracted in Batch 2 (go-tdd-patterns, go-idempotent-retry-patterns, go-api-ergonomics-patterns) symmetrically paired with python-pack equivalents.",
+    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-go` suffix; language-specific skills use `go-` prefix. `goroutine-leak-prevention` is kept unsuffixed since `goroutine-` already encodes Go.",
+    "perf_regime_ownership": "G104, G107, G109 (Go-specific perf-confidence regime, rules 32/33) live here as authored guardrails; G105 and G106 are shared-core (single language-neutral scripts that dispatch via active-packages); G110 stays aspirational until first [perf-exception:] marker ships. Owner agents: sdk-perf-architect-go, sdk-profile-auditor-go, sdk-complexity-devil-go, sdk-soak-runner-go, sdk-benchmark-devil-go. Symmetric Python-pack equivalents in python.json.",
+    "marker_protocol_ownership": "G95-G103 (marker protocol) live here because byte-hash semantics depend on source-byte offsets, currently Go-AST-specific. The sdk-marker-protocol skill and sdk-marker-scanner/sdk-marker-hygiene-devil agents stay in shared-core (cross-language); the enforcement scripts stay in this pack."
+  }
+}

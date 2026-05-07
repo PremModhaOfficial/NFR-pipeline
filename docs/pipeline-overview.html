@@ -1,0 +1,693 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>motadata-sdk-pipeline — Overview</title>
+  <style>
+    :root {
+      --fg: #1a1a1a;
+      --muted: #5a5a5a;
+      --bg: #fafafa;
+      --card: #ffffff;
+      --line: #e4e4e4;
+      --accent: #2457c5;
+      --accent-soft: #eef2fb;
+      --ok: #0f7c4b;
+      --ok-soft: #e6f4ed;
+      --warn: #b45309;
+      --warn-soft: #fdf3e1;
+      --block: #b42318;
+      --block-soft: #fce8e6;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, Arial, sans-serif;
+      color: var(--fg);
+      background: var(--bg);
+      line-height: 1.55;
+      font-size: 15px;
+    }
+
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    header.hero {
+      background: linear-gradient(135deg, #1b3a7a 0%, #2457c5 100%);
+      color: #fff;
+      padding: 40px 28px;
+      border-radius: 12px;
+      margin-bottom: 28px;
+    }
+
+    header.hero h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+    }
+
+    header.hero p.sub {
+      margin: 0;
+      opacity: 0.88;
+      font-size: 15px;
+    }
+
+    header.hero .tags {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    header.hero .tag {
+      background: rgba(255, 255, 255, 0.18);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      letter-spacing: 0.3px;
+    }
+
+    nav.toc {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+
+    nav.toc strong {
+      font-size: 13px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    nav.toc ul {
+      margin: 8px 0 0;
+      padding: 0;
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px 14px;
+    }
+
+    nav.toc a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    nav.toc a:hover {
+      text-decoration: underline;
+    }
+
+    section.card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px 26px;
+      margin-bottom: 22px;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 20px;
+      border-bottom: 2px solid var(--accent-soft);
+      padding-bottom: 6px;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 16px;
+      color: var(--accent);
+    }
+
+    h4 {
+      margin: 14px 0 6px;
+      font-size: 14px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      margin: 0 0 10px;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 13px;
+      background: var(--accent-soft);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
+
+    pre {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      background: #f4f4f4;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      margin: 10px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0;
+      font-size: 13.5px;
+    }
+
+    th,
+    td {
+      text-align: left;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      background: #f4f6fa;
+      font-weight: 600;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+    }
+
+    .pill.ok {
+      background: var(--ok-soft);
+      color: var(--ok);
+    }
+
+    .pill.warn {
+      background: var(--warn-soft);
+      color: var(--warn);
+    }
+
+    .pill.block {
+      background: var(--block-soft);
+      color: var(--block);
+    }
+
+    .pill.info {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .flow .node {
+      background: var(--accent-soft);
+      border: 1px solid #c6d3f0;
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 8px;
+    }
+
+    .flow .node .n {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .flow .node .t {
+      font-weight: 700;
+      margin: 3px 0 4px;
+    }
+
+    .flow .node .d {
+      font-size: 12.5px;
+      color: #333;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    @media (max-width: 720px) {
+      .two-col {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    .feature {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+      background: #fbfcfe;
+    }
+
+    .feature .t {
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--accent);
+      font-size: 14px;
+    }
+
+    .feature .d {
+      font-size: 13px;
+      color: #333;
+    }
+
+    ul.tight {
+      margin: 6px 0;
+      padding-left: 20px;
+    }
+
+    ul.tight li {
+      margin: 3px 0;
+    }
+
+    .io-panel {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 720px) {
+      .io-panel {
+        grid-template-columns: 1fr;
+      }
+
+      .io-panel .arrow {
+        text-align: center;
+      }
+    }
+
+    .io-box {
+      background: #fbfcfe;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px 16px;
+    }
+
+    .io-box h4 {
+      margin-top: 0;
+    }
+
+    .io-panel .arrow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 40px;
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+    }
+
+    .legend {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+
+    <header class="hero">
+      <h1>motadata-sdk-pipeline</h1>
+      <p class="sub">NFR-driven, multi-agent pipeline that turns a detailed Technical PRD into a production-grade Go SDK
+        client.</p>
+      <div class="tags">
+        <span class="tag">33 agents</span>
+        <span class="tag">40 skills</span>
+        <span class="tag">38 guardrails</span>
+        <span class="tag">5 phases + 0.5</span>
+        <span class="tag">10 HITL gates</span>
+        <span class="tag">Go 1.26</span>
+      </div>
+    </header>
+
+    <nav class="toc">
+      <strong>On this page</strong>
+      <ul>
+        <li><a href="#problem">Problem</a></li>
+        <li><a href="#solution">Solution</a></li>
+        <li><a href="#io">Input &amp; Output</a></li>
+        <li><a href="#flow">Pipeline Flow</a></li>
+        <li><a href="#phases">Phases in Detail</a></li>
+      </ul>
+    </nav>
+
+    <!-- PROBLEM -->
+    <section class="card" id="problem">
+      <h2>1. Problem Statement</h2>
+      <p>Building a production-grade Go SDK client by hand is slow, inconsistent, and error-prone &mdash; NFRs, Go
+        idioms, resilience, and observability all depend on reviewer diligence. There is no reproducible, auditable path
+        from <em>"here is what we need"</em> to <em>"here is a tested SDK"</em>.</p>
+    </section>
+
+    <!-- SOLUTION -->
+    <section class="card" id="solution">
+      <h2>2. What the Pipeline Implements</h2>
+      <p>A deterministic, multi-agent pipeline that:</p>
+      <ul class="tight">
+        <li>Accepts a 14-section TPRD plus two machine-readable manifests (<code>§Skills-Manifest</code>,
+          <code>§Guardrails-Manifest</code>).
+        </li>
+        <li>Runs 5 phases (Intake &rarr; Design &rarr; Impl &rarr; Testing &rarr; Feedback) with an optional Phase 0.5
+          Analyze for extension/update modes.</li>
+        <li>Uses <strong>adversarial devil agents</strong> to review every artifact before it advances.</li>
+        <li>Enforces quality via <strong>38 mechanical guardrail scripts</strong> (G01–G103).</li>
+        <li>Pauses at <strong>10 human-in-the-loop gates</strong> for taste, policy, and safety decisions.</li>
+        <li>Writes to a dedicated branch <code>sdk-pipeline/&lt;run-id&gt;</code> — never main, never pushed.</li>
+        <li>Closes the loop with a <strong>feedback phase</strong> that improves the pipeline itself across runs.</li>
+      </ul>
+    </section>
+
+    <!-- I/O -->
+    <section class="card" id="io">
+      <h2>3. Input &amp; Output</h2>
+      <div class="io-panel">
+        <div class="io-box">
+          <h4>Input</h4>
+          <p><strong>TPRD (14 sections):</strong> Request Type, Scope + Non-Goals, Motivation, Functional Requirements,
+            <em>NFRs (numeric gates)</em>, Dependencies, Config + API, Observability, Resilience, Security, Testing,
+            Breaking-Change Risk, Rollout, Clarifications.
+          </p>
+          <p><strong>§Skills-Manifest:</strong> skills the TPRD expects the pipeline to consume (validated WARN).</p>
+          <p><strong>§Guardrails-Manifest:</strong> Gxx guardrails that must be enforced (validated BLOCKER).</p>
+          <p><strong><code>$SDK_TARGET_DIR</code>:</strong> target Go SDK git repo (must be clean).</p>
+          <p><strong>Request modes:</strong> <span class="pill info">A</span> greenfield, <span
+              class="pill info">B</span> extension, <span class="pill info">C</span> incremental update.</p>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="io-box">
+          <h4>Output</h4>
+          <p><strong>On branch <code>sdk-pipeline/&lt;run-id&gt;</code>:</strong></p>
+          <ul class="tight">
+            <li>New/modified Go package(s) with Config struct + <code>New(cfg)</code></li>
+            <li>Tests: unit &ge;90% coverage, integration (testcontainers), benchmarks, fuzz</li>
+            <li>Godoc on every export, <code>Example_*</code> functions, README</li>
+            <li>Ownership markers: <code>[traces-to: TPRD-…]</code>, <code>[owned-by:]</code>,
+              <code>[constraint:]</code>
+            </li>
+            <li>OTel hooks wired through <code>motadatagosdk/otel</code></li>
+          </ul>
+          <p><strong>Per-run artifacts in <code>runs/&lt;run-id&gt;/</code>:</strong> decision log (JSONL), review
+            reports, coverage/bench/leak/vuln reports, <code>run-summary.md</code>.</p>
+          <p><strong>Persistent:</strong> updated <code>baselines/</code>,
+            <code>evolution/evolution-reports/&lt;run-id&gt;.md</code>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- FLOW -->
+    <section class="card" id="flow">
+      <h2>4. End-to-End Pipeline Flow</h2>
+      <div class="flow">
+        <div class="node">
+          <div class="n">H0</div>
+          <div class="t">Preflight</div>
+          <div class="d">target-dir is a clean git repo</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 0</div>
+          <div class="t">Intake</div>
+          <div class="d">canonicalize TPRD; validate manifests; ask clarifiers; detect Mode A/B/C</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 0.5</div>
+          <div class="t">Analyze <em>(B/C)</em></div>
+          <div class="d">snapshot existing API + tests + benches; build ownership-map</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 1</div>
+          <div class="t">Design</div>
+          <div class="d">api.go.stub + interfaces + algorithms + deps; 7 devil reviews</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 2</div>
+          <div class="t">Implementation</div>
+          <div class="d">TDD red&rarr;green&rarr;refactor&rarr;docs; marker-aware merge; 5 reviewers</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 3</div>
+          <div class="t">Testing</div>
+          <div class="d">coverage + integration + bench + leak + fuzz + supply-chain</div>
+        </div>
+        <div class="node">
+          <div class="n">Phase 4</div>
+          <div class="t">Feedback</div>
+          <div class="d">metrics + retrospective + golden regression + learning-engine</div>
+        </div>
+        <div class="node">
+          <div class="n">Result</div>
+          <div class="t">Merge / Keep / Delete</div>
+          <div class="d">H10 — user decides on the branch</div>
+        </div>
+      </div>
+      <p class="legend">The path backtracks on BLOCKER findings: leaks &rarr; Impl, vulns &rarr; Design, regressions
+        &rarr; user via H8. The run never advances to Feedback with red tests.</p>
+
+      <h3>The Two Nested Loops</h3>
+      <pre>Cross-run loop   →  baselines + evolution-reports + learning-engine patches existing skills
+  └── Single-run loop  →  TPRD → 5 phases → branch
+        └── Review-fix sub-loop (≤5 retries/finding, ≤10 global, 2 stuck-threshold)</pre>
+    </section>
+
+    <!-- PHASES DETAIL -->
+    <section class="card" id="phases">
+      <h2>5. Phases in Detail</h2>
+
+      <h3>Phase 0 — Intake</h3>
+      <p><strong>Lead:</strong> <code>sdk-intake-agent</code>. <strong>Output:</strong> canonical <code>tprd.md</code>,
+        manifest checks, mode detection.</p>
+      <table>
+        <tr>
+          <th>Wave</th>
+          <th>What it does</th>
+          <th>Enforced by</th>
+        </tr>
+        <tr>
+          <td>I1 Ingest</td>
+          <td>Read NL or TPRD file; structure into 14 sections</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>I2 Skills-Manifest</td>
+          <td>Every declared skill exists at &ge; version</td>
+          <td><span class="pill warn">G23 WARN</span></td>
+        </tr>
+        <tr>
+          <td>I3 Guardrails-Manifest</td>
+          <td>Every declared Gxx has an executable script</td>
+          <td><span class="pill block">G24 BLOCKER</span></td>
+        </tr>
+        <tr>
+          <td>I4 Clarifications</td>
+          <td>Max 5 Qs (target 0 with detailed TPRD)</td>
+          <td><span class="pill info">G22 INFO</span></td>
+        </tr>
+        <tr>
+          <td>I5 Mode detect</td>
+          <td>A / B / C</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>I6 Completeness</td>
+          <td>All 14 sections non-empty; Non-Goals &ge;3</td>
+          <td><span class="pill block">G20, G21</span></td>
+        </tr>
+        <tr>
+          <td>I7 HITL H1</td>
+          <td>User approves TPRD + manifest verdicts</td>
+          <td>human</td>
+        </tr>
+      </table>
+
+      <h3>Phase 0.5 — Extension Analyze (Mode B/C only)</h3>
+      <p><strong>Agents:</strong> <code>sdk-existing-api-analyzer</code>, <code>sdk-marker-scanner</code>.</p>
+      <p>Snapshots existing <code>current-api.json</code>, <code>test-baseline.json</code>,
+        <code>bench-baseline.txt</code>, and writes <code>ownership-map.json</code> (which symbols are MANUAL vs
+        pipeline-owned). This is what makes incremental updates safe.
+      </p>
+
+      <h3>Phase 1 — Design</h3>
+      <p><strong>Lead:</strong> <code>sdk-design-lead</code>. <strong>Devils (7):</strong> design, dep-vet, semver,
+        convention, security, over-engineering critic, breaking-change (B/C), API-ergonomics.</p>
+      <p><strong>Produces:</strong> <code>api.go.stub</code> (must compile), <code>interfaces.md</code>,
+        <code>algorithms.md</code>, <code>concurrency.md</code>, <code>dependencies.md</code>.
+      </p>
+      <p><strong>Gated by:</strong> G30 (stub compiles), G31 (deps documented), G32/G33 (govulncheck + osv-scanner), G34
+        (license allowlist), G38 (no tenancy leak).</p>
+
+      <h3>Phase 2 — Implementation</h3>
+      <p><strong>Lead:</strong> <code>sdk-impl-lead</code>. <strong>Branch:</strong>
+        <code>sdk-pipeline/&lt;run-id&gt;</code>.
+      </p>
+      <p><strong>Devils (5):</strong> code-reviewer, API-ergonomics, over-engineering critic, marker-hygiene,
+        constraint-devil.</p>
+      <p><strong>Gated by:</strong> G40 (no TODOs), G41 (build), G42 (vet), G43 (fmt), G48 (no init),
+        <strong>G95–G103</strong> (marker protocol).
+      </p>
+
+      <h3>Phase 3 — Testing</h3>
+      <p><strong>Lead:</strong> <code>sdk-testing-lead</code>.</p>
+      <table>
+        <tr>
+          <th>Wave</th>
+          <th>Check</th>
+          <th>Gate</th>
+        </tr>
+        <tr>
+          <td>T1</td>
+          <td>Unit coverage &ge; 90% per new package</td>
+          <td><span class="pill block">G61</span></td>
+        </tr>
+        <tr>
+          <td>T2</td>
+          <td>Integration via testcontainers (real backends)</td>
+          <td><span class="pill block">G66</span></td>
+        </tr>
+        <tr>
+          <td>T3</td>
+          <td>Flake hunt: <code>-count=3</code> must be green</td>
+          <td><span class="pill block">G63</span></td>
+        </tr>
+        <tr>
+          <td>T4-T5</td>
+          <td>Benchmarks + benchstat vs baseline</td>
+          <td><span class="pill block">G65</span> (+5% hot, +10% shared)</td>
+        </tr>
+        <tr>
+          <td>T6</td>
+          <td><code>goleak</code> + <code>-race -count=5</code></td>
+          <td><span class="pill block">G62</span></td>
+        </tr>
+        <tr>
+          <td>T7</td>
+          <td>Fuzz (if TPRD §11 lists targets)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>T8</td>
+          <td><code>govulncheck</code> + <code>osv-scanner</code></td>
+          <td><span class="pill block">G32 G33</span></td>
+        </tr>
+        <tr>
+          <td>T9</td>
+          <td>Observability spans/metrics emit</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>T10</td>
+          <td>Mutation score (optional)</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td>T11</td>
+          <td>HITL H8 if perf regression</td>
+          <td>human</td>
+        </tr>
+      </table>
+      <p><strong>On failure:</strong> leak &rarr; back to Impl; vuln &rarr; back to Design; regression &rarr; H8 gate;
+        flaky &rarr; fix in place.</p>
+
+      <h3>Phase 4 — Feedback &amp; Self-Learning</h3>
+      <p><strong>Lead:</strong> <code>learning-engine</code>.</p>
+      <table>
+        <tr>
+          <th>Wave</th>
+          <th>Agent</th>
+          <th>Produces</th>
+        </tr>
+        <tr>
+          <td>F1</td>
+          <td>metrics-collector</td>
+          <td>per-agent quality scores, phase metrics</td>
+        </tr>
+        <tr>
+          <td>F2</td>
+          <td>phase-retrospector</td>
+          <td>pattern mining per phase</td>
+        </tr>
+        <tr>
+          <td>F3</td>
+          <td>root-cause-tracer</td>
+          <td>HIGH/CRITICAL defects traced to origin</td>
+        </tr>
+        <tr>
+          <td>F4</td>
+          <td>skill-drift-detector + skill-coverage-reporter</td>
+          <td>divergence + unused skills</td>
+        </tr>
+        <tr>
+          <td>F5</td>
+          <td><em>(retired in v0.3.0)</em></td>
+          <td>full-pipeline golden-corpus replay was retired per CLAUDE.md rule 28; safety moved to learning-notifications.md + 4 compensating baselines</td>
+        </tr>
+        <tr>
+          <td>F6</td>
+          <td>improvement-planner</td>
+          <td>categorized patches + proposals</td>
+        </tr>
+        <tr>
+          <td>F7</td>
+          <td>learning-engine</td>
+          <td>auto-applies safe patches</td>
+        </tr>
+        <tr>
+          <td>F8</td>
+          <td>baseline-manager</td>
+          <td>raises baselines; resets every 5 runs</td>
+        </tr>
+      </table>
+    </section>
+
+    <footer>
+      motadata-sdk-pipeline &middot; generated from repo state on 2026-04-18 &middot;
+      <code>docs/pipeline-overview.html</code>
+    </footer>
+
+  </div>
+</body>
+
+</html>

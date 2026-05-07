@@ -1,0 +1,149 @@
+{
+  "schema_version": "1.0.0",
+  "name": "python",
+  "version": "1.0.0",
+  "type": "language-adapter",
+  "description": "Python SDK pipeline adapter. Target: Python 3.12+ async-capable client SDK (motadatapysdk).",
+  "depends": ["shared-core@>=1.0.0"],
+  "pipeline_version_compat": ">=0.6.0",
+
+  "agents": [
+    "code-reviewer-python",
+    "documentation-agent-python",
+    "refactoring-agent-python",
+    "sdk-api-ergonomics-devil-python",
+    "sdk-asyncio-leak-hunter-python",
+    "sdk-benchmark-devil-python",
+    "sdk-breaking-change-devil-python",
+    "sdk-complexity-devil-python",
+    "sdk-constraint-devil-python",
+    "sdk-convention-devil-python",
+    "sdk-dep-vet-devil-python",
+    "sdk-existing-api-analyzer-python",
+    "sdk-integration-flake-hunter-python",
+    "sdk-packaging-devil-python",
+    "sdk-perf-architect-python",
+    "sdk-profile-auditor-python",
+    "sdk-soak-runner-python"
+  ],
+
+  "skills": [
+    "python-api-ergonomics-patterns",
+    "python-asyncio-leak-prevention",
+    "python-asyncio-patterns",
+    "python-backpressure-flow-control",
+    "python-circuit-breaker-policy",
+    "python-client-rate-limiting",
+    "python-client-shutdown-lifecycle",
+    "python-client-tls-configuration",
+    "python-connection-pool-tuning",
+    "python-credential-provider-pattern",
+    "python-dependency-vetting",
+    "python-doctest-patterns",
+    "python-exception-patterns",
+    "python-hexagonal-architecture",
+    "python-hypothesis-patterns",
+    "python-idempotent-retry-patterns",
+    "python-mock-strategy",
+    "python-mypy-strict-typing",
+    "python-otel-instrumentation",
+    "python-pytest-patterns",
+    "python-sdk-config-pattern",
+    "python-tdd-patterns",
+    "python-testcontainers-setup"
+  ],
+
+  "guardrails": [
+    "G31-py", "G32-py", "G34-py",
+    "G40-py", "G41-py", "G42-py", "G43-py",
+    "G60-py", "G61-py", "G63-py",
+    "G104-py", "G105-py", "G106-py", "G107-py", "G108-py", "G109-py", "G110-py",
+    "G200-py"
+  ],
+
+  "aspirational_guardrails": {},
+
+  "waves": {
+    "I3_existing_api":    ["sdk-existing-api-analyzer-python"],
+    "D1_design":          ["sdk-perf-architect-python"],
+    "D3_devils":          ["sdk-convention-devil-python", "sdk-dep-vet-devil-python"],
+    "D3_devils_mode_a":   ["sdk-packaging-devil-python"],
+    "D3_devils_mode_bc":  ["sdk-breaking-change-devil-python", "sdk-constraint-devil-python"],
+    "M3_5_profile_audit": ["sdk-profile-auditor-python"],
+    "M4_constraint_proof":["sdk-constraint-devil-python"],
+    "M9_packaging":       ["sdk-packaging-devil-python"],
+    "M5_refactor":        ["refactoring-agent-python"],
+    "M6_docs":            ["documentation-agent-python"],
+    "M7_devils":          ["sdk-api-ergonomics-devil-python", "sdk-asyncio-leak-hunter-python", "code-reviewer-python"],
+    "T3_flake_hunt":      ["sdk-integration-flake-hunter-python"],
+    "T5_bench_complexity":["sdk-complexity-devil-python", "sdk-benchmark-devil-python"],
+    "T5_5_soak":          ["sdk-soak-runner-python"],
+    "T6_leak":            ["sdk-asyncio-leak-hunter-python"]
+  },
+
+  "tier_critical": {
+    "design":         {
+      "T1": ["sdk-perf-architect-python", "sdk-convention-devil-python", "sdk-dep-vet-devil-python"],
+      "T2": ["sdk-convention-devil-python", "sdk-dep-vet-devil-python"]
+    },
+    "implementation": {
+      "T1": ["code-reviewer-python", "documentation-agent-python", "sdk-asyncio-leak-hunter-python", "sdk-profile-auditor-python"],
+      "T2": ["code-reviewer-python", "documentation-agent-python"]
+    },
+    "testing":        {
+      "T1": ["sdk-asyncio-leak-hunter-python", "sdk-benchmark-devil-python", "sdk-complexity-devil-python", "sdk-soak-runner-python", "sdk-integration-flake-hunter-python"],
+      "T2": ["sdk-integration-flake-hunter-python"]
+    }
+  },
+
+  "toolchain": {
+    "build": "python -m build",
+    "test": "pytest -x --no-header",
+    "lint": "ruff check src tests",
+    "vet": "mypy --strict src tests",
+    "fmt": "ruff format --check src tests",
+    "coverage": "pytest --cov --cov-report=json",
+    "coverage_min_pct": 90,
+    "bench": "pytest --benchmark-only --benchmark-json=bench.json",
+    "supply_chain": ["pip-audit", "safety check"],
+    "leak_check": "asyncio-task-tracker fixture"
+  },
+
+  "file_extensions": [".py", ".pyi"],
+
+  "marker_comment_syntax": {
+    "line": "#",
+    "block_open": "\"\"\"",
+    "block_close": "\"\"\""
+  },
+
+  "module_file": "pyproject.toml",
+
+  "baselines": {
+    "scope_owned": "per-language",
+    "owns_per_language": [
+      "performance-baselines.json",
+      "coverage-baselines.json",
+      "output-shape-history.jsonl",
+      "devil-verdict-history.jsonl",
+      "do-not-regenerate-hashes.json",
+      "stable-signatures.json"
+    ],
+    "owns_per_language_paths": [
+      "baselines/python/performance-baselines.json",
+      "baselines/python/coverage-baselines.json",
+      "baselines/python/output-shape-history.jsonl",
+      "baselines/python/devil-verdict-history.jsonl",
+      "baselines/python/do-not-regenerate-hashes.json",
+      "baselines/python/stable-signatures.json",
+      "baselines/python/regression-report-<run-id>.md"
+    ],
+    "contributes_per_language_partition_to": []
+  },
+
+  "notes": {
+    "v0_6_migration_status": "fully populated. Includes 3 new skills authored fresh in Batch 2 as symmetry pairs to the go-pack extractions (python-tdd-patterns, python-idempotent-retry-patterns, python-api-ergonomics-patterns).",
+    "naming_convention": "Per docs/PACKAGE-AUTHORING-GUIDE.md: language-specific agents use `-python` suffix; language-specific skills use `python-` prefix.",
+    "perf_regime_ownership": "G104-py, G107-py, G109-py (Python-specific perf-confidence regime, rules 32/33) realized via py-spy, scalene, pytest-benchmark + tracemalloc. Authored as language-specific scripts. G105 and G106 are shared-core single-script form (read state.jsonl from this pack's soak runner; signal-list and column names language-neutral). G110-py stays aspirational until first [perf-exception:] marker ships."
+  }
+}

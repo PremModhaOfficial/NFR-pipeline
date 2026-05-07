@@ -1,0 +1,49 @@
+# Per-pack performance-check configuration.
+#
+# Transitional location — P2 of the C-refactor (see runs/c-refactor-plan.md).
+# At P3 this content folds into packs/<lang>/pack-manifest.yaml under the
+# perf_checks section, and individual guardrails resolve their pack from the
+# active run-manifest. For now (flat layout), the active pack is selected via
+# the PACK environment variable; default = `go`.
+#
+# Schema (per pack):
+#   alloc_metric.name              — column name in design/perf-budget.md
+#   alloc_metric.bench_output_field — label the bench tool emits
+#   bench_tool                     — command pattern for running benches
+#   bench_name_pattern             — glob/regex for discovering bench fns
+#   profile_tool                   — what sdk-profile-auditor-go invokes
+#   profile_output_format          — how top-N is extracted
+#   throughput_unit                — units in perf-budget.md throughput column
+
+go:
+  alloc_metric:
+    name: allocs_per_op
+    bench_output_field: "allocs/op"
+  bench_tool: "go test -bench=. -benchmem -benchtime=1s"
+  bench_name_pattern: "Benchmark*"
+  profile_tool: pprof
+  profile_output_format: pprof_top_json
+  throughput_unit: op_per_sec
+  test_file_suffix: _test.go
+
+python:
+  alloc_metric:
+    name: heap_bytes_per_call
+    bench_output_field: peak_memory_b
+  bench_tool: "pytest-benchmark --benchmark-min-rounds=5"
+  bench_name_pattern: "bench_*"
+  profile_tool: py-spy
+  profile_output_format: speedscope_json
+  throughput_unit: op_per_sec
+  test_file_suffix: "_test.py"
+
+rust:
+  alloc_metric:
+    name: instructions_per_call
+    bench_output_field: instructions
+  bench_tool: "cargo bench --bench"
+  bench_name_pattern: "bench_*"
+  profile_tool: cargo-flamegraph
+  profile_output_format: folded_stack
+  throughput_unit: op_per_sec
+  test_file_suffix: ".rs"

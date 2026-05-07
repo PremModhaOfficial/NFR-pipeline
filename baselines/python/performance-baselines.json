@@ -1,0 +1,140 @@
+{
+  "schema_version": "1.0",
+  "scope": "per-language",
+  "language": "python",
+  "policy": "first-seed-then-rolling-50",
+  "description": "Per-symbol benchmark baselines. First-run seed for each new package; subsequent runs append to history[] and the regression check (G65) compares against rolling-50-run median per CLAUDE.md rule 28.",
+  "host_load_class": {
+    "kernel": "Linux 6.17.0",
+    "arch": "x86_64",
+    "python": "3.12.3",
+    "container_engine": "docker 28.5.1",
+    "load_class": "dedicated-test-vm"
+  },
+  "packages": {
+    "motadata_nats": {
+      "first_seen_run": "motadata-nats-v1",
+      "first_seen_at": "2026-05-04T15:30:00Z",
+      "history": [
+        {
+          "run_id": "motadata-nats-v1",
+          "pipeline_version": "0.6.0",
+          "recorded_at": "2026-05-04T15:30:00Z",
+          "regression_verdict": "INCOMPLETE-first-seed",
+          "g108_oracle_verdict": "INCOMPLETE-aspirational",
+          "symbols": {
+            "core.extract_headers": {
+              "p50_us": 0.34,
+              "p50_min_us": 0.30,
+              "p50_max_us": 27.31,
+              "rounds": 101927,
+              "iterations": 1,
+              "budget_p50_us": 5.0,
+              "budget_status": "PASS",
+              "headroom": 14.7
+            },
+            "core.inject_context_3keys": {
+              "p50_us": 0.68,
+              "rounds": 113418,
+              "iterations": 1,
+              "budget_p50_us": 4.0,
+              "budget_status": "PASS",
+              "headroom": 5.9
+            },
+            "corenats.Publisher.publish": {
+              "p50_us": 43.03,
+              "rounds": 200,
+              "iterations": 5,
+              "budget_p50_us": 250.0,
+              "budget_status": "PASS",
+              "headroom": 5.8,
+              "go_oracle_p50_us": 80.0,
+              "oracle_margin_observed": 0.54,
+              "oracle_margin_threshold": 2.5,
+              "oracle_status": "PASS"
+            },
+            "corenats.BatchPublisher.add_no_flush": {
+              "p50_us": 8.02,
+              "rounds": 500,
+              "iterations": 5,
+              "budget_p50_us": 12.0,
+              "budget_status": "PASS",
+              "headroom": 1.5,
+              "go_oracle_p50_us": 3.0,
+              "oracle_margin_observed": 2.67,
+              "oracle_margin_threshold": 4.0,
+              "oracle_status": "PASS"
+            },
+            "corenats.BatchPublisher.flush_batch_100": {
+              "p50_us": 482.91,
+              "rounds": 20,
+              "iterations": 1,
+              "budget_p50_us": 25000.0,
+              "budget_status": "PASS",
+              "headroom": 51.8
+            },
+            "corenats.Subscriber.callback_dispatch": {
+              "p50_us": 140.31,
+              "rounds": 200,
+              "iterations": 1,
+              "budget_p50_us": 30.0,
+              "budget_status": "FAIL-INCOMPLETE-aspirational",
+              "headroom": 0.21,
+              "diagnosis": "measurement scope is full pub→sub round-trip wallclock (publish + nc framing + cb dispatch); declared target is callback dispatch only. Calibration mismatch — refine bench scope in next run. Per skill 'CALIBRATION-WARN classification': dep-floor-unachievable. Verdict INCOMPLETE-aspirational, not PASS."
+            },
+            "jetstream.Publisher.publish": {
+              "p50_us": 154.41,
+              "rounds": 100,
+              "iterations": 1,
+              "budget_p50_us": 1500.0,
+              "budget_status": "PASS",
+              "headroom": 9.7,
+              "go_oracle_p50_us": 1000.0,
+              "oracle_margin_observed": 0.15,
+              "oracle_margin_threshold": 1.5,
+              "oracle_status": "PASS"
+            },
+            "jetstream.Publisher.publish_async_spawn": {
+              "p50_us": 102.53,
+              "rounds": 200,
+              "iterations": 1,
+              "budget_p50_us": 25.0,
+              "budget_status": "FAIL-INCOMPLETE-aspirational",
+              "headroom": 0.24,
+              "diagnosis": "measurement includes nc.publish call along the publish_async path (not just task spawn). Calibration mismatch with declared isolation. Verdict INCOMPLETE-aspirational."
+            }
+          },
+          "complexity_sweep_g107": {
+            "MultiError.__str__": {
+              "loglog_slope": 0.81,
+              "r2": 0.99,
+              "expected": "linear (slope ≈ 1.0)",
+              "verdict": "PASS"
+            },
+            "core.extract_headers_over_H": {
+              "loglog_slope": 0.05,
+              "r2": 0.65,
+              "expected": "linear or sub-linear (slope ≤ 1.4)",
+              "verdict": "PASS",
+              "notes": "constant-cost contextvar reads dominate at small H; super-linear cap met"
+            },
+            "core.inject_context_over_H": {
+              "loglog_slope": -0.015,
+              "r2": 0.18,
+              "expected": "linear or sub-linear",
+              "verdict": "PASS",
+              "notes": "constant-dominated"
+            }
+          },
+          "alloc_audit_g104": {
+            "core.extract_headers": {"bytes_per_call": 0, "budget_bytes": 400, "verdict": "PASS"},
+            "core.inject_context":  {"bytes_per_call": 0, "budget_bytes": 500, "verdict": "PASS"},
+            "MultiError.__str__":   {"bytes_per_call": 0, "budget_bytes": 800, "verdict": "PASS"},
+            "utils.is_retryable":   {"bytes_per_call": 0, "budget_bytes": 100, "verdict": "PASS"},
+            "notes": "tracemalloc proxy; positive-only size_diff sum; ±200B noise floor per perf-budget calibration. All measured 0 bytes/call — well within budget."
+          }
+        }
+      ]
+    }
+  }
+}

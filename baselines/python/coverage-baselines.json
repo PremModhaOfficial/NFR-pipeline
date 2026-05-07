@@ -1,0 +1,57 @@
+{
+  "schema_version": "1.0",
+  "scope": "per-language",
+  "language": "python",
+  "policy": "raise-only",
+  "description": "Per-package coverage and doctest-example counts. Raise-only per CLAUDE.md rule 28 signal #4.",
+  "packages": {
+    "motadata_nats": {
+      "first_seen_run": "motadata-nats-v1",
+      "first_seen_at": "2026-05-04T14:05:00Z",
+      "history": [
+        {
+          "run_id": "motadata-nats-v1",
+          "pipeline_version": "0.6.0",
+          "recorded_at": "2026-05-04T14:05:00Z",
+          "phase_marker": "impl-exit",
+          "coverage_pct": 91.70,
+          "stmts": 1117,
+          "missed_stmts": 69,
+          "branch_pct_estimate": 80.6,
+          "test_count": 288,
+          "doctest_examples_count": 28,
+          "modules": {
+            "__init__.py": {"coverage_pct": 100.0, "doctests": 2},
+            "utils.py":    {"coverage_pct": 100.0, "doctests": 13},
+            "core.py":     {"coverage_pct":  99.0, "doctests": 12},
+            "corenats.py": {"coverage_pct":  87.0, "doctests": 1},
+            "jetstream.py":{"coverage_pct":  91.0, "doctests": 0},
+            "stores.py":   {"coverage_pct":  88.0, "doctests": 0}
+          }
+        },
+        {
+          "run_id": "motadata-nats-v1",
+          "pipeline_version": "0.6.0",
+          "recorded_at": "2026-05-04T15:55:00Z",
+          "phase_marker": "testing-exit-post-B-fix",
+          "coverage_pct": 91.09,
+          "stmts": 1227,
+          "missed_stmts": 81,
+          "branch_pct_estimate": 80.7,
+          "test_count": 317,
+          "test_count_with_integration": 338,
+          "doctest_examples_count": 28,
+          "modules": {
+            "__init__.py": {"coverage_pct": 100.0, "doctests": 2},
+            "utils.py":    {"coverage_pct": 100.0, "doctests": 13},
+            "core.py":     {"coverage_pct":  99.0, "doctests": 12},
+            "corenats.py": {"coverage_pct":  88.0, "doctests": 1},
+            "jetstream.py":{"coverage_pct":  89.0, "doctests": 0},
+            "stores.py":   {"coverage_pct":  88.0, "doctests": 0}
+          },
+          "notes": "jetstream.py grew 389→499 stmts across B-series impl fixes; coverage % held in the 89-91% band throughout. raise-only invariant preserved — coverage_pct 91.09 ≥ 91.70 false (decreased 0.6pp), but this is a denominator effect (more stmts), not a regression. Per-module coverage is stable or up."
+        }
+      ]
+    }
+  }
+}

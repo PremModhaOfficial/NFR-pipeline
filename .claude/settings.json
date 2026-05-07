@@ -1,0 +1,172 @@
+{
+  "pipeline_version": "0.7.2",
+  "target_sdk_dir_env": "SDK_TARGET_DIR",
+  "phase_budgets": {
+    "intake": {
+      "tokens": 150000,
+      "wall_clock_sec": 1200
+    },
+    "design": {
+      "tokens": 500000,
+      "wall_clock_sec": 3600
+    },
+    "implementation": {
+      "tokens": 1000000,
+      "wall_clock_sec": 7200
+    },
+    "testing": {
+      "tokens": 500000,
+      "wall_clock_sec": 3600
+    },
+    "documentation": {
+      "tokens": 150000,
+      "wall_clock_sec": 900
+    },
+    "feedback": {
+      "tokens": 200000,
+      "wall_clock_sec": 1800
+    }
+  },
+  "safety_caps": {
+    "prompt_patches_per_run": 10,
+    "existing_skill_patches_per_run": 3,
+    "new_skills_per_run": 0,
+    "new_guardrails_per_run": 0,
+    "new_agents_per_run": 0,
+    "per_issue_max_retries": 5,
+    "global_max_iterations": 10,
+    "stuck_threshold": 2,
+    "baseline_reset_every_n_runs": 5,
+    "_note": "new_skills/guardrails/agents are human-authored via PR only; pipeline runtime caps are 0"
+  },
+  "hitl_gate_timeouts_hours": {
+    "H0_target_dir": 0,
+    "H1_tprd": 24,
+    "H4_breaking": 48,
+    "H5_design": 24,
+    "H6_dep_vet": 12,
+    "H7_impl_diff": 24,
+    "H7b_mode_c_diff": 48,
+    "H8_bench": 12,
+    "H9_testing": 24,
+    "H9_5_docs": 24,
+    "H10_merge": 72,
+    "_note": "H2 (skills) and H3 (agents) removed with Phase -1; H9 repurposed from skill-major to testing sign-off"
+  },
+  "regression_gates": {
+    "bench_hot_path_pct": 5,
+    "bench_shared_pct": 10,
+    "coverage_min_new_pkg": 90,
+    "coverage_min_existing_pkg_delta": 0
+  },
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go vet:*)",
+      "Bash(gofmt:*)",
+      "Bash(staticcheck:*)",
+      "Bash(govulncheck:*)",
+      "Bash(osv-scanner:*)",
+      "Bash(benchstat:*)",
+      "Bash(pytest:*)",
+      "Bash(mypy:*)",
+      "Bash(ruff:*)",
+      "Bash(bandit:*)",
+      "Bash(pip-audit:*)",
+      "Bash(safety:*)",
+      "Bash(python -m build:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git branch:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rev-parse:*)",
+      "Bash(git merge-base:*)",
+      "Bash(jq:*)",
+      "Bash(sha256sum:*)",
+      "Bash(find:*)",
+      "Bash(git tag:*)",
+      "Bash(git mv:*)",
+      "Bash(git add:*)",
+      "Bash(git restore:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(cargo update:*)",
+      "Bash(npm install --package-lock-only:*)",
+      "Bash(npm install --lockfile-only:*)",
+      "Bash(pnpm install --lockfile-only:*)",
+      "Bash(yarn install --mode=update-lockfile:*)",
+      "Bash(uv lock:*)",
+      "Bash(poetry lock:*)",
+      "Bash(./scripts/guardrails/*.sh:*)",
+      "Bash(bash ./scripts/guardrails/*.sh:*)",
+      "Bash(scripts/guardrails/*.sh:*)",
+      "Bash(./hooks/*.sh:*)",
+      "Bash(bash ./hooks/*.sh:*)",
+      "Read(*)",
+      "Write(runs/**)",
+      "Write(baselines/**)",
+      "Write(evolution/**)",
+      "Write(skills/*/SKILL.md)",
+      "Write(skills/*/evolution-log.md)",
+      "Write(agents/*.md)",
+      "Write(.claude/audit/**)",
+      "Write(docs/PROPOSED-*.md)"
+    ],
+    "deny_write_outside_target_or_runs": true,
+    "never_commit": true,
+    "never_push": true
+  },
+  "_hooks_note": "v0.7 adopts plugin layout. Hooks live in hooks/hooks.json (loaded automatically when this repo is consumed via plugin install OR via `claude --plugin-dir .` during local dev). The hook script (hooks/log-bash.sh) appends one JSONL line per Bash call to .claude/audit/bash-events.jsonl; phase leads slice that file by run timestamps from runs/<id>/state/run-manifest.json.",
+  "license_allowlist": [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "BSD-2-Clause",
+    "ISC",
+    "0BSD",
+    "MPL-2.0"
+  ],
+  "skill_drift_check_every_n_runs": 10,
+  "_mcp_note": "MCP servers are dev-only here, NOT shipped with the plugin distribution. The plugin (.claude-plugin/plugin.json) deliberately does not include a top-level .mcp.json because consumers configure their own MCP environment. Pipeline runtime tools that reference mcp__<server>__* fall back gracefully when the server is unregistered.",
+  "mcpServers": {
+    "context7": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    },
+    "neo4j-memory": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["mcp-neo4j-memory@0.4.5"],
+      "env": {
+        "NEO4J_URL": "bolt://localhost:7687",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "neo4jneo4j",
+        "NEO4J_DATABASE": "neo4j"
+      }
+    },
+    "code-graph": {
+      "type": "stdio",
+      "command": "cgc",
+      "args": ["mcp", "start"],
+      "env": {
+        "NEO4J_URI": "bolt://localhost:7687",
+        "NEO4J_USERNAME": "neo4j",
+        "NEO4J_PASSWORD": "neo4jneo4j"
+      }
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "serena",
+      "args": [
+        "start-mcp-server",
+        "--context=claude-code",
+        "--mode=interactive",
+        "--mode=editing",
+        "--mode=query-projects"
+      ]
+    }
+  }
+}

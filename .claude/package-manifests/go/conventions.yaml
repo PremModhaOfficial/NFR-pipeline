@@ -1,0 +1,152 @@
+# Go pack — language-specific overlays for shared-core debt-bearer agents.
+#
+# How this file is consumed:
+#   The 4 debt-bearer agents in shared-core (sdk-design-devil, sdk-overengineering-critic,
+#   sdk-semver-devil, sdk-security-devil) carry universal rule bodies. At runtime, when
+#   active-packages.json:target_language == "go", they load this file and apply the Go
+#   examples + idiom names alongside the universal rules.
+#
+# Per CLAUDE.md rule 34 (D6=Split decision from R2 spike, 2026-04-27): rule body lives
+# in shared-core; per-language flavor lives in <pack>/conventions.yaml. This is the
+# canonical example file for the Go pack.
+#
+# Schema: the top-level `agents` map is keyed by agent name. Each agent has a `rules`
+# map keyed by rule-name. Each rule entry carries any of:
+#   - idiom: <string>           # the Go-language term for the concept (e.g. "Config struct")
+#   - primitive: <string>        # the Go-language primitive (e.g. "goroutine", "context.Context")
+#   - rule: <string>             # the language-coupled rule statement
+#   - rationale: <string>        # why the rule exists
+#   - example_violation: <code>  # what NOT to do
+#   - example_fix: <code>        # what TO do
+#   - examples_violations: <[strings]>  # multiple short violation examples
+#
+# Adding a new debt-bearer: extend the `agents` map. Adding a new language: author
+# python/conventions.yaml with the same shape.
+
+schema_version: "1.0"
+language: go
+pipeline_version_compat: ">=0.5.0"
+
+agents:
+
+  sdk-design-devil:
+    rules:
+      parameter_count:
+        idiom: "Config struct"
+        rationale: "Group >4 args into a dedicated Config struct; constructor takes the struct (or *Config)."
+        example_violation: |
+          func New(host, port, password string, db, poolSize int, timeout time.Duration) (*Client, error)
+        example_fix: |
+          type Config struct {
+              Host, Password string
+              Port, DB, PoolSize int
+              Timeout time.Duration
+          }
+          func New(cfg Config) (*Client, error)
+
+      mutable_shared_state:
+        idiom: "constructor capture; copy Config into immutable client fields"
+        example_violation: |
+          c := &Client{}
+          c.PoolSize = 5    // post-construction mutation
+        example_fix: |
+          c := New(Config{PoolSize: 5})    // immutable after construction
+
+      naming_idiomatic:
+        rules:
+          - "no stuttering: a Type should not begin with its package name"
+          - "-er suffix only for actors that perform the named action; not data managers"
+          - "acronym casing: ID not Id, HTTP not Http, URL not Url, API not Api"
+        examples_violations:
+          - "dragonfly.DragonflyClient — stuttering"
+          - "ConfigManager — '-er' on non-actor"
+          - "UserId — should be UserID"
+
+      goroutine_ownership:
+        primitive: "goroutine"
+        idiom: "every spawned goroutine documents: owner, stop signal, shutdown trigger"
+        example_violation: |
+          func (c *Client) Start() {
+              go c.poll()    // who stops this? when?
+          }
+        example_fix: |
+          // Run starts the poll goroutine; cancel ctx to stop it.
+          // Caller owns the goroutine via ctx; Run blocks until ctx is done OR
+          // the goroutine exits (whichever first).
+          func (c *Client) Run(ctx context.Context) error { /* ... */ }
+
+      cancellation_primitive:
+        primitive: "context.Context"
+        rule: "Every I/O method takes ctx as first param. Methods that don't take ctx cannot be cancelled and cannot honor deadlines from upstream callers."
+        example_violation: |
+          func (c *Cache) Set(key, val string) error
+        example_fix: |
+          func (c *Cache) Set(ctx context.Context, key, val string) error
+
+      forbidden_init:
+        rule: "No init() functions; no package-level mutable state"
+        rationale: "init() runs at import time, is untestable, hard to reason about, and creates hidden coupling."
+        example_violation: |
+          var globalRegistry = map[string]Handler{}
+          func init() { globalRegistry["x"] = ... }
+
+      interface_bloat:
+        rule: "Interfaces with >5 methods are usually doing too much; propose splitting into role-based interfaces"
+        rationale: "Go embraces small interfaces. `io.Reader` (1 method), `io.Writer` (1 method) compose to many things."
+        example_fix: "Split a 7-method `Storage` into `Reader` (Get) + `Writer` (Set, Delete) + `Lister` (List, Exists) etc."
+
+  sdk-overengineering-critic:
+    rules:
+      unused_fields:
+        rule: "Generated Config has fields no code references — remove."
+        example_violation: "Config.RetryJitter declared, never read in any code path"
+
+      unnecessary_wrapper:
+        rule: "Trivial wrapper types around primitives — remove and use the primitive directly"
+        example_violation: |
+          type StringWrapper struct { s string }
+          func (w StringWrapper) Get() string { return w.s }
+          func (w *StringWrapper) Set(s string) { w.s = s }
+        example_fix: "Use string directly; wrap only when invariants need enforcement"
+
+      ceremonial_struct:
+        rule: "Struct with >10 fields (not a Config) — split into smaller domain types"
+
+      error_chain_ladder:
+        rule: "Stack of fmt.Errorf %w calls is a smell — flatten to one wrap per logical layer; preserve the deepest cause via errors.As / errors.Is"
+        example_violation: |
+          fmt.Errorf("x: %w", fmt.Errorf("y: %w", fmt.Errorf("z: %w", err)))
+        example_fix: |
+          // One wrap per layer, with semantic context per wrap
+          if err != nil { return fmt.Errorf("set %q: %w", key, err) }
+
+  sdk-semver-devil:
+    rules:
+      semver_basics:
+        rule: "Standard semver: patch = bug fix, minor = additive, major = break"
+        notes: "Go's v2+ module path requirement (`/v2` suffix) is enforced separately by the `go-module-paths` skill — not here."
+
+      examples:
+        example_minor_addition: "dragonfly.Config — new exported type, stable-since v1.1.0 ✓"
+        example_major_break: "dragonfly.New(Config) (*Cache, error) → dragonfly.New(*Config) (*Cache, error) — receiver type change is breaking"
+        example_patch: "internal cache eviction policy faster — same exports, same semantics — patch bump"
+
+  sdk-security-devil:
+    rules:
+      credential_log_safety:
+        primitive: "Stringer interface — implement (T) String() string for credential-bearing types so fmt.Sprintf doesn't leak"
+        rule: "Credential-bearing fields in Config or any struct must not auto-log their value"
+        example_violation: |
+          type Config struct { Password string }
+          // fmt.Sprintf("%+v", cfg) leaks the password into logs
+        example_fix: |
+          type Secret string
+          func (Secret) String() string { return "<redacted>" }
+          type Config struct { Password Secret }
+
+      tls_minimum:
+        rule: "TLS 1.2 floor; prefer 1.3"
+        notes: "Universal; reproduced here for completeness in the Go pack overlay."
+
+      ssrf_default:
+        rule: "Reject private IP ranges (RFC 1918, link-local, loopback) by default; require explicit opt-in"

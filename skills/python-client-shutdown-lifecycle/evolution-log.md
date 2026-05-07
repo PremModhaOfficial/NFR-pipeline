@@ -1,0 +1,4 @@
+# Evolution Log — python-client-shutdown-lifecycle
+
+## 1.0.0 — v0.5.0-phase-b — 2026-04-28
+Initial authorship. async with primary, aclose() fallback (NOT close — async naming convention); _closed flag + asyncio.Lock for idempotency under concurrent invocation; ordered teardown (tasks → drain → sessions → executors); cancellation-safe via contextlib.suppress(CancelledError) and selective asyncio.shield for short critical cleanup; bounded drain via asyncio.timeout with force-cancel after timeout; operations after close raise InvalidStateError; __aexit__ returns None (never True); never use __del__ for cleanup; AsyncExitStack for multi-client composition; 3-test gate pattern. Python pack analog of go-client-shutdown-lifecycle. Cited from sdk-convention-devil-python C-5 and python-asyncio-leak-prevention.

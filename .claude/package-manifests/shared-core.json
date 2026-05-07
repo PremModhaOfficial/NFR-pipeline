@@ -1,0 +1,119 @@
+{
+  "schema_version": "1.0.0",
+  "name": "shared-core",
+  "version": "1.0.0",
+  "type": "core",
+  "description": "Language-agnostic orchestration, meta-skills, governance. Any language adapter depends on this.",
+  "depends": [],
+  "pipeline_version_compat": ">=0.6.0",
+  "agents": [
+    "baseline-manager",
+    "defect-analyzer",
+    "guardrail-validator",
+    "improvement-planner",
+    "learning-engine",
+    "metrics-collector",
+    "phase-retrospector",
+    "root-cause-tracer",
+    "sdk-design-devil",
+    "sdk-design-lead",
+    "sdk-drift-detector",
+    "sdk-impl-lead",
+    "sdk-intake-agent",
+    "sdk-marker-hygiene-devil",
+    "sdk-marker-scanner",
+    "sdk-merge-planner",
+    "sdk-overengineering-critic",
+    "sdk-prd-conformance-devil",
+    "sdk-security-devil",
+    "sdk-semver-devil",
+    "sdk-skill-coverage-reporter",
+    "sdk-skill-drift-detector",
+    "sdk-testing-lead",
+    "skill-conformance-auditor"
+  ],
+  "skills": [
+    "api-ergonomics-audit",
+    "conflict-resolution",
+    "context-summary-writing",
+    "decision-logging",
+    "environment-prerequisites-check",
+    "feedback-analysis",
+    "guardrail-validation",
+    "idempotent-retry-safety",
+    "lifecycle-events",
+    "mcp-knowledge-graph",
+    "network-error-classification",
+    "review-fix-protocol",
+    "sdk-marker-protocol",
+    "sdk-semver-governance",
+    "spec-driven-development",
+    "tdd-patterns"
+  ],
+  "guardrails": [
+    "G01", "G02", "G03", "G04", "G05", "G06", "G07",
+    "G20", "G21", "G22", "G23", "G24",
+    "G45",
+    "G67", "G68",
+    "G69", "G70", "G80", "G85", "G86", "G87", "G90", "G93", "G116",
+    "G105", "G106"
+  ],
+  "aspirational_guardrails": {
+    "G81": "Baselines-not-lowered enforcement. Design rule decided in v0.2.0; script not yet authored.",
+    "G83": "Per-run decision-log entry caps. Caps documented in CLAUDE.md rule 11; script not yet authored.",
+    "G84": "Output-shape hash compensating baseline. Decided in CLAUDE.md rule 28 v0.3.0; script not yet authored."
+  },
+  "waves": {
+    "D2_mechanical": [
+      "guardrail-validator"
+    ],
+    "D3_devils": [
+      "sdk-design-devil",
+      "sdk-security-devil",
+      "sdk-semver-devil"
+    ],
+    "M2_merge_plan_mode_bc": [
+      "sdk-merge-planner"
+    ],
+    "M7_devils": [
+      "sdk-marker-hygiene-devil",
+      "sdk-overengineering-critic",
+      "sdk-prd-conformance-devil",
+      "skill-conformance-auditor"
+    ],
+    "M9_mechanical": [
+      "guardrail-validator"
+    ],
+    "T8_supply_chain": [
+      "guardrail-validator"
+    ],
+    "F1_metrics": [
+      "metrics-collector"
+    ],
+    "F2_retrospective": [
+      "phase-retrospector"
+    ],
+    "F3_root_cause": [
+      "root-cause-tracer"
+    ],
+    "F4_skill_drift_coverage": [
+      "sdk-skill-drift-detector",
+      "sdk-skill-coverage-reporter"
+    ],
+    "F6_improvement": [
+      "improvement-planner"
+    ],
+    "F7_learning": [
+      "learning-engine"
+    ],
+    "F8_baseline": [
+      "baseline-manager"
+    ]
+  },
+  "tier_critical": {},
+  "notes": {
+    "v0_6_migration_status": "stub. Arrays grow per migration batch as files arrive from v0.5.0. validate-packages.sh passes against the empty manifest because the corresponding fs locations are also empty.",
+    "waves_authoritative_source": "Wave-id values mirror the canonical wave names in phases/{DESIGN,IMPLEMENTATION,TESTING,FEEDBACK}-PHASE.md. Each shared-core agent appears in exactly the wave its phase doc declares. Per-language packs (go.json / python.json) contribute additional agents to the same wave-ids; the impl/design/testing/feedback leads union across all active packages at runtime. Mode-conditional waves use the `_mode_bc` / `_mode_a` suffix per the convention documented in sdk-design-lead.md and sdk-impl-lead.md.",
+    "agents_not_in_waves": "Seven agents intentionally omitted from `waves` because they are NOT dispatched by a phase lead via WAVE_AGENTS resolution: (1) the four orchestrators sdk-{intake,design,impl,testing}-lead are themselves the wave dispatchers; (2) sdk-marker-scanner runs at start of Mode B/C analyze step BEFORE any phase lead spawns and is invoked by the pipeline driver, not by a wave; (3) sdk-drift-detector runs as a long-lived background observer over the T-SOAK period and is launched directly by the testing lead's soak orchestration prose, not via a discrete wave; (4) defect-analyzer is consumed inside F3_root_cause by root-cause-tracer rather than spawned independently. These intentional omissions are not dispatch gaps."
+  }
+}

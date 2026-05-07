@@ -1,0 +1,30 @@
+# Archive neighbor (reference-only; pipeline has no runtime dep on it)
+../motadata-ai-pipeline-ARCHIVE/
+
+# Per-run scratch (regeneratable; don't track hot runs)
+runs/archive/
+
+# Local env + creds for integration tests
+.env
+.env.local
+
+# OMC scratch
+.omc/state/
+.omc/sessions/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled AST-hash backend binaries (rebuildable from *.go sources; ~7MB total)
+scripts/ast-hash/go-backend
+scripts/ast-hash/go-symbols
+packs/*/ast-hash-backend
+packs/*/symbols-backend
+.claude/audit/
