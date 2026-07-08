@@ -39,6 +39,14 @@ def warn(msg: str) -> None:
     print(f"WARN: {msg}", file=sys.stderr)
 
 
+def parse_json_line(line: str, label: str) -> dict[str, Any] | None:
+    try:
+        return json.loads(line)
+    except Exception as e:
+        warn(f"{label}: invalid JSON ({e}); skipped")
+        return None
+
+
 def load_offsets() -> dict[str, int]:
     if not OFFSETS_PATH.is_file():
         return {}
@@ -124,10 +132,8 @@ def mk_relation(frm: str, to: str, rel_type: str) -> dict[str, Any]:
 
 
 def process_agent_performance_line(line: str, seed: dict[str, Any], counters: dict[str, int]) -> None:
-    try:
-        row = json.loads(line)
-    except Exception as e:
-        warn(f"agent-performance: invalid JSON ({e}); skipped")
+    row = parse_json_line(line, "agent-performance")
+    if row is None:
         return
 
     run_id = row.get("run_id")
@@ -192,10 +198,8 @@ def process_agent_performance_line(line: str, seed: dict[str, Any], counters: di
 
 
 def process_prompt_evolution_line(line: str, seed: dict[str, Any], counters: dict[str, int]) -> None:
-    try:
-        row = json.loads(line)
-    except Exception as e:
-        warn(f"prompt-evolution-log: invalid JSON ({e}); skipped")
+    row = parse_json_line(line, "prompt-evolution-log")
+    if row is None:
         return
 
     run_id = row.get("run_id")
